@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ПЫВА ДЛЯ НАРОДУ</title>
+<style>
+  * { box-sizing: border-box; }
+  html {
+    background-color: #0e1621;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: #0e1621;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    color: #f5f5f5;
+    overflow-x: hidden;
+  }
+  .chat-container {
+    width: min(100%, 520px);
+    background-color: #17212b;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header {
+    background-color: #242f3d;
+    padding: 12px 16px;
+    font-weight: bold;
+    font-size: 16px;
+    border-bottom: 1px solid #10161e;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .chat-header .title {
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-header .subtitle {
+    font-size: 12px;
+    color: #7f91a4;
+    font-weight: normal;
+  }
+  .messages {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #0e1621;
+  }
+  .msg-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .msg-bubble {
+    background-color: #182533;
+    padding: 7px 12px 7px 10px;
+    border-radius: 10px 10px 10px 2px;
+    max-width: calc(100% - 44px);
+    position: relative;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    font-size: clamp(14px, 3.7vw, 15px);
+    line-height: 1.38;
+  }
+  .author {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 2px;
+    cursor: pointer;
+  }
+  .text {
+    color: #e4ecf2;
+  }
+  .time {
+    font-size: 10px;
+    color: #6c7e90;
+    float: right;
+    margin-left: 8px;
+    margin-top: 4px;
+  }
+  
+  /* Цвета ников и аватарок */
+  .c-karudo { color: #e17076; } .bg-karudo { background: #e17076; }
+  .c-mihas { color: #5bc472; }  .bg-mihas { background: #5bc472; }
+  .c-grab { color: #e59346; }   .bg-grab { background: #e59346; }
+  .c-hommer { color: #a695e7; } .bg-hommer { background: #a695e7; }
+  .c-layout { color: #64b5ef; } .bg-layout { background: #64b5ef; }
+  .c-lay { color: #ec82be; }    .bg-lay { background: #ec82be; }
+  .c-myavka { color: #ffd678; } .bg-myavka { background: #d4a329; }
+  .c-prost { color: #4dc2ba; }  .bg-prost { background: #4dc2ba; }
+  .c-mashka { color: #f47b97; } .bg-mashka { background: #f47b97; }
+  .c-zhon { color: #9cd15b; }   .bg-zhon { background: #9cd15b; }
+  .c-mariachi { color: #62b1f6; }.bg-mariachi { background: #62b1f6; }
+  .c-jenek { color: #f28f52; }  .bg-jenek { background: #f28f52; }
+  .c-elize { color: #b18cf0; }  .bg-elize { background: #b18cf0; }
+  .c-kord { color: #4fa7db; }   .bg-kord { background: #4fa7db; }
+  .c-digit { color: #46c793; }  .bg-digit { background: #46c793; }
+
+
+  .audio-panel {
+    padding: 12px 16px;
+    background: #1f2c3a;
+    border-bottom: 1px solid #10161e;
+  }
+  .audio-title {
+    font-size: 13px;
+    color: #cbd7e3;
+    margin-bottom: 8px;
+  }
+  .audio-panel audio {
+    width: 100%;
+    display: block;
+  }
+  .autoplay-hint, .replay-button {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: #2b5278;
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+  }
+  .autoplay-hint { display: none; }
+  .autoplay-hint.show { display: block; }
+  .replay-button { background: #355f87; }
+
+  .msg-row {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+    filter: blur(2px);
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.38s ease, transform 0.38s ease, filter 0.38s ease, max-height 0.38s ease, margin 0.38s ease;
+  }
+  .msg-row.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+    max-height: 420px;
+    overflow: visible;
+  }
+  .msg-row.show .msg-bubble {
+    animation: messagePop 0.42s cubic-bezier(.2, 1.35, .35, 1) both;
+  }
+  @keyframes messagePop {
+    0% { transform: scale(0.88); }
+    70% { transform: scale(1.025); }
+    100% { transform: scale(1); }
+  }
+
+  .typing-row {
+    display: none;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .typing-row.show {
+    display: flex;
+  }
+  .typing-bubble {
+    background-color: #182533;
+    padding: 9px 13px;
+    border-radius: 10px 10px 10px 2px;
+    color: #8ea2b5;
+    font-size: 13px;
+  }
+  .typing-dots span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin: 0 1px;
+    border-radius: 50%;
+    background: #8ea2b5;
+    animation: typingDot 1s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .15s; }
+  .typing-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes typingDot {
+    0%, 80%, 100% { transform: translateY(0); opacity: .45; }
+    40% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 0; align-items: stretch; }
+    .chat-container {
+      width: 100%;
+      min-height: 100vh;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .chat-header {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 10px 12px;
+    }
+    .chat-header .subtitle { font-size: 11px; }
+    .audio-panel { padding: 10px 12px; }
+    .audio-title { font-size: 12px; }
+    .messages { padding: 10px 8px 14px; gap: 7px; }
+    .msg-row, .typing-row { gap: 6px; align-items: flex-end; }
+    .avatar { width: 30px; height: 30px; font-size: 11px; }
+    .msg-bubble { max-width: calc(100% - 38px); padding: 7px 10px; border-radius: 10px 10px 10px 3px; }
+    .author { font-size: 12px; }
+    .time { font-size: 9px; margin-left: 6px; }
+  }
+
+  @media (max-width: 360px) {
+    .avatar { width: 28px; height: 28px; font-size: 10px; }
+    .messages { padding-left: 6px; padding-right: 6px; }
+    .msg-bubble { max-width: calc(100% - 34px); font-size: 13px; }
+  }
+
+
+  /* cssOnlyChatStart: смартфон-совместимая CSS-анимация без JavaScript */
+  .msg-row {
+    animation-name: cssOnlyMessageAppear;
+    animation-duration: 0.7s;
+    animation-timing-function: cubic-bezier(.2, 1.25, .35, 1);
+    animation-delay: var(--delay, 0ms);
+    animation-fill-mode: forwards;
+  }
+  .msg-row.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+    max-height: 420px;
+    overflow: visible;
+  }
+  @keyframes cssOnlyMessageAppear {
+    0% {
+      opacity: 0;
+      transform: translateY(18px) scale(0.96);
+      filter: blur(2px);
+      max-height: 0;
+      overflow: hidden;
+    }
+    1% {
+      max-height: 420px;
+    }
+    70% {
+      opacity: 1;
+      transform: translateY(0) scale(1.025);
+      filter: blur(0);
+      max-height: 420px;
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+      max-height: 420px;
+      overflow: visible;
+    }
+  }
+  .typing-row {
+    display: none !important;
+  }
+
+  /* CSS-only typing indicators for mobile-safe online effect */
+  .typing-row.auto-typing {
+    display: flex !important;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    animation-name: cssOnlyTyping;
+    animation-duration: var(--typing-duration, 1800ms);
+    animation-delay: var(--typing-delay, 0ms);
+    animation-fill-mode: both;
+    animation-timing-function: ease-in-out;
+  }
+  @keyframes cssOnlyTyping {
+    0% {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(8px);
+    }
+    8% {
+      opacity: 1;
+      max-height: 80px;
+      transform: translateY(0);
+    }
+    86% {
+      opacity: 1;
+      max-height: 80px;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(4px);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="avatar" style="background: #2b5278;">АО</div>
+    <div class="title">
+      <span>Академорг / Курилка</span>
+      <span class="subtitle">25 участников</span>
+    </div>
+  </div>
+
+  <div class="audio-panel">
+    <div class="audio-title">🎵 Даёшь пива для народу</div>
+    <audio id="beer-audio" controls autoplay playsinline preload="auto">
+      <source src="assets/beer-audio.mp3" type="audio/mpeg">
+      Ваш браузер не поддерживает встроенное аудио.
+    </audio>
+    <button id="beer-audio-start" class="autoplay-hint" type="button">▶ Нажмите, чтобы включить аудио</button>
+    <button id="replay-chat" class="replay-button" type="button">↻ Показать чат заново</button>
+  </div>
+
+  <div class="messages" id="messages">
+    <!-- 1 -->
+        <div class="typing-row auto-typing" style="--typing-delay:300ms; --typing-duration:3550ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:4000ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="msg-bubble">
+        <div class="author c-karudo">Karudo</div>
+        <div class="text">Я так понимаю, мало кто меня знает в лицо, а именно поэтому во всеуслышанье объявляю: первым трем м.орговцам, которые увидят меня в академоргвскую вебкамеру и пришлют скриншот, я поставлю по бутылочке пивка. Я, конечно, не каждый день там хожу, но с другой стороны - бутылка пива - это бутлка пива :-)</div>
+        <div class="time">13:40</div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+        <div class="typing-row auto-typing" style="--typing-delay:5000ms; --typing-duration:7392ms">
+      <div class="avatar bg-grab">LG</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:12542ms">
+      <div class="avatar bg-grab">LG</div>
+      <div class="msg-bubble">
+        <div class="author c-grab">La Grabadora</div>
+        <div class="text">😱</div>
+        <div class="time">13:41</div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+        <div class="typing-row auto-typing" style="--typing-delay:13542ms; --typing-duration:7391ms">
+      <div class="avatar bg-mihas">GM</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:21083ms">
+      <div class="avatar bg-mihas">GM</div>
+      <div class="msg-bubble">
+        <div class="author c-mihas">Гость Mihas</div>
+        <div class="text">А если я пришлю 3 скриншота, дадите мне 3 бутылки?</div>
+        <div class="time">13:42</div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+        <div class="typing-row auto-typing" style="--typing-delay:22083ms; --typing-duration:7392ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:29625ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="msg-bubble">
+        <div class="author c-karudo">Karudo</div>
+        <div class="text">ну если они будут сделаны не подряд, а в разное время :-)</div>
+        <div class="time">13:43</div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+        <div class="typing-row auto-typing" style="--typing-delay:30625ms; --typing-duration:7392ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:38167ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="msg-bubble">
+        <div class="author c-karudo">Karudo</div>
+        <div class="text">Обсуждаемо :-)</div>
+        <div class="time">13:43</div>
+      </div>
+    </div>
+
+    <!-- 6 -->
+        <div class="typing-row auto-typing" style="--typing-delay:39167ms; --typing-duration:7391ms">
+      <div class="avatar bg-mihas">GM</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:46708ms">
+      <div class="avatar bg-mihas">GM</div>
+      <div class="msg-bubble">
+        <div class="author c-mihas">Гость Mihas</div>
+        <div class="text">Как чудесно. Буду сидеть и караулить Вас сутки напролет. Уж больно охота халявного пива.</div>
+        <div class="time">13:45</div>
+      </div>
+    </div>
+
+    <!-- 7 -->
+        <div class="typing-row auto-typing" style="--typing-delay:47708ms; --typing-duration:7392ms">
+      <div class="avatar bg-hommer">H</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:55250ms">
+      <div class="avatar bg-hommer">H</div>
+      <div class="msg-bubble">
+        <div class="author c-hommer">Hommer</div>
+        <div class="text">Не хотим. 🙄</div>
+        <div class="time">13:47</div>
+      </div>
+    </div>
+
+    <!-- 8 -->
+        <div class="typing-row auto-typing" style="--typing-delay:56250ms; --typing-duration:7392ms">
+      <div class="avatar bg-layout">L</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:63792ms">
+      <div class="avatar bg-layout">L</div>
+      <div class="msg-bubble">
+        <div class="author c-layout">Layout</div>
+        <div class="text">Я давно заметил, что пьянею только от дареного алкоголя. Но в данном случае это будет заработанный честным непосильным трудом продукт, соотв. без наркотического эффекта.</div>
+        <div class="time">13:50</div>
+      </div>
+    </div>
+
+    <!-- 9 -->
+        <div class="typing-row auto-typing" style="--typing-delay:64792ms; --typing-duration:7391ms">
+      <div class="avatar bg-mihas">GM</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:72333ms">
+      <div class="avatar bg-mihas">GM</div>
+      <div class="msg-bubble">
+        <div class="author c-mihas">Гость Mihas</div>
+        <div class="text">Именно. Ем сейчас уже 5-й честно купленный беляш, и не могу наесться. Может, кто пройдется под камерой еще, а я скриншот сделаю за пирожок?</div>
+        <div class="time">13:52</div>
+      </div>
+    </div>
+
+    <!-- 10 -->
+        <div class="typing-row auto-typing" style="--typing-delay:73333ms; --typing-duration:7392ms">
+      <div class="avatar bg-lay">ЛП</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:80875ms">
+      <div class="avatar bg-lay">ЛП</div>
+      <div class="msg-bubble">
+        <div class="author c-lay">Лай Покусай</div>
+        <div class="text">нас трое будет, в районе вебкамеры... и все с фотоаппаратами - на что нам расчитывать ?</div>
+        <div class="time">13:55</div>
+      </div>
+    </div>
+
+    <!-- 11 -->
+        <div class="typing-row auto-typing" style="--typing-delay:81875ms; --typing-duration:7392ms">
+      <div class="avatar bg-myavka">М</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:89417ms">
+      <div class="avatar bg-myavka">М</div>
+      <div class="msg-bubble">
+        <div class="author c-myavka">Мявка</div>
+        <div class="text">как резко популярность то чувака возросла :) Хитрый коммерческий ход 😉</div>
+        <div class="time">13:58</div>
+      </div>
+    </div>
+
+    <!-- 12 -->
+        <div class="typing-row auto-typing" style="--typing-delay:90417ms; --typing-duration:7391ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:97958ms">
+      <div class="avatar bg-karudo">K</div>
+      <div class="msg-bubble">
+        <div class="author c-karudo">Karudo</div>
+        <div class="text">Да вот, за пиво покупаю популярность :-)</div>
+        <div class="time">14:00</div>
+      </div>
+    </div>
+
+    <!-- 13 -->
+        <div class="typing-row auto-typing" style="--typing-delay:98958ms; --typing-duration:7392ms">
+      <div class="avatar bg-prost">P</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:106500ms">
+      <div class="avatar bg-prost">P</div>
+      <div class="msg-bubble">
+        <div class="author c-prost">//Prost//</div>
+        <div class="text">Гений.</div>
+        <div class="time">14:01</div>
+      </div>
+    </div>
+
+    <!-- 14 -->
+        <div class="typing-row auto-typing" style="--typing-delay:107500ms; --typing-duration:7392ms">
+      <div class="avatar bg-mashka">M</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:115042ms">
+      <div class="avatar bg-mashka">M</div>
+      <div class="msg-bubble">
+        <div class="author c-mashka">Mashka</div>
+        <div class="text">я смотрю, продажные мы люди! 😂</div>
+        <div class="time">14:03</div>
+      </div>
+    </div>
+
+    <!-- 15 -->
+        <div class="typing-row auto-typing" style="--typing-delay:116042ms; --typing-duration:7391ms">
+      <div class="avatar bg-prost">P</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:123583ms">
+      <div class="avatar bg-prost">P</div>
+      <div class="msg-bubble">
+        <div class="author c-prost">//Prost//</div>
+        <div class="text">Еще какие)</div>
+        <div class="time">14:04</div>
+      </div>
+    </div>
+
+    <!-- 16 -->
+        <div class="typing-row auto-typing" style="--typing-delay:124583ms; --typing-duration:7392ms">
+      <div class="avatar bg-zhon">Ж</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:132125ms">
+      <div class="avatar bg-zhon">Ж</div>
+      <div class="msg-bubble">
+        <div class="author c-zhon">Жонсон</div>
+        <div class="text">За пиво не только скриншот!</div>
+        <div class="time">14:06</div>
+      </div>
+    </div>
+
+    <!-- 17 -->
+        <div class="typing-row auto-typing" style="--typing-delay:133125ms; --typing-duration:7392ms">
+      <div class="avatar bg-mariachi">EM</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:140667ms">
+      <div class="avatar bg-mariachi">EM</div>
+      <div class="msg-bubble">
+        <div class="author c-mariachi">El Mariachi</div>
+        <div class="text">Ты ж не пьешь))</div>
+        <div class="time">14:07</div>
+      </div>
+    </div>
+
+    <!-- 18 -->
+        <div class="typing-row auto-typing" style="--typing-delay:141667ms; --typing-duration:7391ms">
+      <div class="avatar bg-jenek">J</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:149208ms">
+      <div class="avatar bg-jenek">J</div>
+      <div class="msg-bubble">
+        <div class="author c-jenek">JenEk</div>
+        <div class="text">на халяву пьют и язвеники и трезвеники. 😉</div>
+        <div class="time">14:09</div>
+      </div>
+    </div>
+
+    <!-- 19 -->
+        <div class="typing-row auto-typing" style="--typing-delay:150208ms; --typing-duration:7392ms">
+      <div class="avatar bg-elize">E</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:157750ms">
+      <div class="avatar bg-elize">E</div>
+      <div class="msg-bubble">
+        <div class="author c-elize">elize</div>
+        <div class="text">Предлагаю иной вариант. Я заманиваю c единомышленниками Karudo на Альбумин, вы его фотографируете сколько влезет, а потом нам всем 3 ящика пива. 😎</div>
+        <div class="time">14:12</div>
+      </div>
+    </div>
+
+    <!-- 20 -->
+        <div class="typing-row auto-typing" style="--typing-delay:158750ms; --typing-duration:7392ms">
+      <div class="avatar bg-kord">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:166292ms">
+      <div class="avatar bg-kord">K</div>
+      <div class="msg-bubble">
+        <div class="author c-kord">_KOrd</div>
+        <div class="text">ну зачем же вот так сразу о продажности, продажные не те кто продает фотки за пЫво... ну не жалко ему пЫва для народу, нам такие о как нужны. Даешь Пыва для народу.</div>
+        <div class="time">14:15</div>
+      </div>
+    </div>
+
+    <!-- 21 -->
+        <div class="typing-row auto-typing" style="--typing-delay:167292ms; --typing-duration:7391ms">
+      <div class="avatar bg-kord">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:174833ms">
+      <div class="avatar bg-kord">K</div>
+      <div class="msg-bubble">
+        <div class="author c-kord">_KOrd</div>
+        <div class="text">а вам еще одного не надо для распития 3 ящиков пива, у меня тут рыбка завалялась, как раз на три ящика пЫва... 😉</div>
+        <div class="time">14:16</div>
+      </div>
+    </div>
+
+    <!-- 22 -->
+        <div class="typing-row auto-typing" style="--typing-delay:175833ms; --typing-duration:7392ms">
+      <div class="avatar bg-elize">E</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:183375ms">
+      <div class="avatar bg-elize">E</div>
+      <div class="msg-bubble">
+        <div class="author c-elize">elize</div>
+        <div class="text">Надо. 3 ящика на толпу хватит. Если конечно участники процесса не являются архилюбителями и архиспециалистами пивопитения.</div>
+        <div class="time">14:18</div>
+      </div>
+    </div>
+
+    <!-- 23 -->
+        <div class="typing-row auto-typing" style="--typing-delay:184375ms; --typing-duration:7392ms">
+      <div class="avatar bg-kord">K</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:191917ms">
+      <div class="avatar bg-kord">K</div>
+      <div class="msg-bubble">
+        <div class="author c-kord">_KOrd</div>
+        <div class="text">а мож тода еще и водочки прихватить???, чуть-чуть... мож еще кто подтянется... девченки там...</div>
+        <div class="time">14:20</div>
+      </div>
+    </div>
+
+    <!-- 24 -->
+        <div class="typing-row auto-typing" style="--typing-delay:192917ms; --typing-duration:7391ms">
+      <div class="avatar bg-myavka">М</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:200458ms">
+      <div class="avatar bg-myavka">М</div>
+      <div class="msg-bubble">
+        <div class="author c-myavka">Мявка</div>
+        <div class="text">О, вот это уже тема :) Не популярность покупать а собраться всем :) Когда и где? 🙄</div>
+        <div class="time">14:22</div>
+      </div>
+    </div>
+
+    <!-- 25 -->
+        <div class="typing-row auto-typing" style="--typing-delay:201458ms; --typing-duration:7392ms">
+      <div class="avatar bg-digit">D</div>
+      <div class="typing-bubble">печатает <span class="typing-dots"><span></span><span></span><span></span></span></div>
+    </div>
+<div class="msg-row" style="--delay:209000ms">
+      <div class="avatar bg-digit">D</div>
+      <div class="msg-bubble">
+        <div class="author c-digit">Digitizer</div>
+        <div class="text">пойду туда прям щас и куплю пива (а может водки) 🙂</div>
+        <div class="time">14:25</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// Минимальный скрипт только для кнопки аудио. Анимация чата работает через CSS без JavaScript.
+(function () {
+  function initAudioButton() {
+    var audio = document.getElementById('beer-audio');
+    var startButton = document.getElementById('beer-audio-start');
+    if (!audio || !startButton) return;
+    startButton.className += ' show';
+    startButton.onclick = function () {
+      try {
+        audio.muted = false;
+        audio.volume = 1;
+        audio.play();
+        startButton.className = startButton.className.replace(' show', '');
+      } catch (e) {}
+    };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAudioButton, false);
+  else initAudioButton();
+})();
+</script>
+
+</body>
+</html>
